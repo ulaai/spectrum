@@ -102,8 +102,8 @@ def test():
   # The right results are:
   #           "biased": [0.36338   0.42762   0.77703   0.84322   0.73021  -0.13123  -0.40743]
   #           "unbiased": [0.035591   0.041841   0.075956   0.082345   0.071379  -0.012840  -0.039905]
-  print cum3x(y, y, y, 3, 100, 0, "biased")
-  print cum3x(y, y, y, 3, 100, 0, "unbiased")
+  print (cum3x(y, y, y, 3, 100, 0, "biased"))
+  print (cum3x(y, y, y, 3, 100, 0, "unbiased"))
 
 
 if __name__ == '__main__':

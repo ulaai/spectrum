@@ -84,8 +84,8 @@ def test():
   # The right results are:
   #           "biased": [--0.25719  -0.12011   0.35908   1.01378   0.35908  -0.12011  -0.25719]
   #           "unbiased": [-0.025190  -0.011753   0.035101   0.099002   0.035101  -0.011753  -0.025190]
-  print cum2x(y, y, 3, 100, 0, "biased")
-  print cum2x(y, y, 3, 100, 0, "unbiased")
+  print (cum2x(y, y, 3, 100, 0, "biased"))
+  print (cum2x(y, y, 3, 100, 0, "unbiased"))
 
 
 if __name__ == '__main__':

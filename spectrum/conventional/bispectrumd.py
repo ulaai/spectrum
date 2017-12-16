@@ -10,12 +10,10 @@ import matplotlib.pyplot as plt
 from ..tools import *
 
 
-def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
+def bispectrumd(y, nfft=None, wind=None, nsamp=None, overlap=None):
   """
   Parameters:
-    x    - data vector or time-series
-    y    - data vector or time-series  (same dimensions as x)
-    z    - data vector or time-series  (same dimensions as x)
+    y    - data vector or time-series
     nfft - fft length [default = power of two > segsamp]
     wind - window specification for frequency-domain smoothing
            if 'wind' is a scalar, it specifies the length of the side
@@ -24,9 +22,9 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
               w2(i,j) = wind(i) * wind(j) * wind(i+j)
            if 'wind' is a matrix, it specifies the 2-D filter directly
     segsamp - samples per segment [default: such that we have 8 segments]
-            - if x is a matrix, segsamp is set to the number of rows
-    overlap - percentage overlap, allowed range [0,99]. [default = 50];
-            - if x is a matrix, overlap is set to 0.
+            - if y is a matrix, segsamp is set to the number of rows
+    overlap - percentage overlap [default = 50]
+            - if y is a matrix, overlap is set to 0.
 
   Output:
     Bspec   - estimated bispectrum: an nfft x nfft array, with origin
@@ -35,22 +33,15 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
               of Bspec;  sampling frequency is assumed to be 1.
   """
 
-  (lx, lrecs) = x.shape
   (ly, nrecs) = y.shape
-  (lz, krecs) = z.shape
-
-  if lx != ly or lrecs != nrecs or ly != lz or nrecs != krecs:
-    raise Exception('x, y and z should have identical dimensions')
-
   if ly == 1:
-    x = x.reshape(1,-1)
-    y = y.reshape(1,-1)
-    z = z.reshape(1,-1)
+    y = y.shape(1,-1)
     ly = nrecs
     nrecs = 1
 
+  if not nfft: nfft = 128
   if not overlap: overlap = 50
-  overlap = max(0,min(overlap,99))
+  overlap = min(99, max(overlap, 0))
   if nrecs > 1: overlap = 0
   if not nsamp: nsamp = 0
   if nrecs > 1: nsamp = ly
@@ -58,13 +49,10 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
     nsamp = np.fix(ly/ (8 - 7 * overlap/100))
   if nfft < nsamp:
     nfft = 2**nextpow2(nsamp)
-
-  overlap = np.fix(overlap/100 * nsamp)
+  overlap = np.fix(nsamp*overlap / 100)
   nadvance = nsamp - overlap
   nrecs = np.fix((ly*nrecs - overlap) / nadvance)
 
-
-  # create the 2-D window
   if not wind: wind = 5
 
   m = n = 0
@@ -103,11 +91,11 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
     window = window.reshape(1,-1)
 
     if np.any(np.imag(window)) != 0:
-      print "1-D window has imaginary components: window ignored"
+      print ("1-D window has imaginary components: window ignored")
       window = 1
 
     if np.any(window) < 0:
-      print "1-D window has negative components: window ignored"
+      print ("1-D window has negative components: window ignored")
       window = 1
 
     lwind = np.size(window)
@@ -124,37 +112,30 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
     winsize = m
 
     if m != n:
-      print "2-D window is not square: window ignored"
+      print ("2-D window is not square: window ignored")
       window = 1
       winsize = m
 
     if m%2 == 0:
-      print "2-D window does not have odd length: window ignored"
+      print ("2-D window does not have odd length: window ignored")
       window = 1
       winsize = m
 
     opwind = window
 
+
   # accumulate triple products
   Bspec = np.zeros([nfft, nfft]) # the hankel mask (faster)
   mask = hankel(np.arange(nfft),np.array([nfft-1]+range(nfft-1)))
   locseg = np.arange(nsamp).transpose()
-  x = x.ravel(order='F')
   y = y.ravel(order='F')
-  z = z.ravel(order='F')
 
   for krec in xrange(nrecs):
-    xseg = x[locseg].reshape(1,-1)
-    yseg = y[locseg].reshape(1,-1)
-    zseg = z[locseg].reshape(1,-1)
-
+    xseg = y[locseg].reshape(1,-1)
     Xf = np.fft.fft(xseg - np.mean(xseg), nfft) / nsamp
-    Yf = np.fft.fft(yseg - np.mean(yseg), nfft) / nsamp
-    CZf = np.fft.fft(zseg - np.mean(zseg), nfft) / nsamp
-    CZf = np.conjugate(CZf).ravel(order='F')
-
+    CXf = np.conjugate(Xf).ravel(order='F')
     Bspec = Bspec + \
-      flat_eq(Bspec, (Xf * np.transpose(Yf)) * CZf[mask].reshape(nfft, nfft))
+      flat_eq(Bspec, (Xf * np.transpose(Xf)) * CXf[mask].reshape(nfft, nfft))
     locseg = locseg + int(nadvance)
 
   Bspec = np.fft.fftshift(Bspec) / nrecs
@@ -184,8 +165,8 @@ def bispectrumdx(x, y, z, nfft=None, wind=None, nsamp=None, overlap=None):
 
 
 def test():
-  nl1 = sio.loadmat(here(__file__) + '/demo/nl1.mat')
-  dbic = bispectrumdx(nl1['x'], nl1['x'], nl1['y'], 128,5)
+  qpc = sio.loadmat(here(__file__) + '/demo/qpc.mat')
+  dbic = bispectrumd(qpc['zmat'], 128,3,64,0)
 
 
 if __name__ == '__main__':

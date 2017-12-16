@@ -70,9 +70,9 @@ def bicoherencex(w, x, y, nfft=None, wind=None, nsamp=None, overlap=None):
     cw = 1
 
   if min(rw, cw) != 1 or max(rw, cw) != nsamp:
-    print "Segment size is " + str(nsamp)
-    print "Wind array is " + str(rw) + " by " + str(cw)
-    print "Using default Hanning window"
+    print ("Segment size is " + str(nsamp))
+    print ("Wind array is " + str(rw) + " by " + str(cw))
+    print ("Using default Hanning window")
     wind = np.hanning(nsamp)
 
   wind = wind.reshape(1,-1)
@@ -138,7 +138,7 @@ def bicoherencex(w, x, y, nfft=None, wind=None, nsamp=None, overlap=None):
 
   colmax, row = bic.max(0), bic.argmax(0)
   maxval, col = colmax.max(0), colmax.argmax(0)
-  print 'Max: bic('+str(waxis[col])+','+str(waxis[col])+') = '+str(maxval)
+  print ('Max: bic('+str(waxis[col])+','+str(waxis[col])+') = '+str(maxval))
   plt.show()
 
   return (bic, waxis)
